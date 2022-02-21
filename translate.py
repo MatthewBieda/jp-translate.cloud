@@ -14,7 +14,7 @@ import os
 # Create AWS S3 connection object.
 fs = s3fs.S3FileSystem(anon=False)
 mt, md = MosesTokenizer(lang='en'), MosesDetokenizer(lang='en')
-tagger = fugashi.Tagger('-Owakati')
+tagger = fugashi.Tagger('-r/dev/null -d/home/hoge/mydic')
 
 @st.cache
 def build_directories():
