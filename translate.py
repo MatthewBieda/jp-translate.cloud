@@ -19,10 +19,8 @@ st.title("jp-translate.io")
 
 @st.cache
 def download_Unidic():
-    cmd = "python -m unidic download"
-    returned_value = subprocess.Popen(cmd, shell=True)  # returns the exit code in unix
-    returned_value.wait()
-    print('returned value:', returned_value)
+    returned_value = subprocess.run(sys.executable, "-m", "unidic", "download")  # returns the exit code in unix
+    print(returned_value)
 
 download_Unidic()
 
