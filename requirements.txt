@@ -1,5 +1,5 @@
 ctranslate2==2.12.0
-fugashi==1.1.2
+fugashi[unidic]==1.1.2
 neologdn==0.5.1
 nltk==3.7
 s3fs==2022.1.0
