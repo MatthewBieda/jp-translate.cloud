@@ -7,4 +7,3 @@ sacremoses==0.0.47
 sentencepiece==0.1.96
 streamlit==1.5.1
 truecase==0.0.14
-unidic-lite==1.0.8
