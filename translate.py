@@ -19,17 +19,20 @@ st.title("jp-translate.io")
 
 @st.cache
 def download_Unidic():
-    returned_value = subprocess.run(sys.executable, "-m", "unidic", "download")  # returns the exit code in unix
+    cmd = "python -m unidic download"
+    returned_value = subprocess.run(cmd, shell=True) 
     print(returned_value)
 
 download_Unidic()
 
 # Create AWS S3 connection object.
 fs = s3fs.S3FileSystem(anon=False)
+print("Connection established")
 
 # Initialize tokenizers
 mt, md = MosesTokenizer(lang='en'), MosesDetokenizer(lang='en')
 tagger = fugashi.Tagger('-Owakati')
+print("Tokenizers started")
 
 @st.cache
 def build_directories():
@@ -58,6 +61,8 @@ def build_directories():
             name = lst[2]
             path = "JPEN_ctranslate2\\" + name
             fs.download(file, path)
+
+    print("Models directories built and downloaded")
 
 def translate(source, translator, sp_source_model, sp_target_model):
     """Use CTranslate model to translate a sentence
