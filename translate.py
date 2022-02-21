@@ -10,15 +10,30 @@ import neologdn
 import truecase
 import s3fs
 import os
+import subprocess
+
+# Title for the page and nice icon
+st.set_page_config(page_title="NMT", page_icon="🤖")
+# Header
+st.title("jp-translate.io")
+
+@st.cache
+def download_Unidic():
+    cmd = "python -m unidic download"
+    returned_value = subprocess.call(cmd, shell=True)  # returns the exit code in unix
+    print('returned value:', returned_value)
+
+download_Unidic()
 
 # Create AWS S3 connection object.
 fs = s3fs.S3FileSystem(anon=False)
+
+# Initialize tokenizers
 mt, md = MosesTokenizer(lang='en'), MosesDetokenizer(lang='en')
 tagger = fugashi.Tagger('-Owakati')
 
 @st.cache
 def build_directories():
-    #Download ctranslate2 models from Amazon S3
     #First construct ENJP directory, then JPEN
     files = fs.ls('ctranslate2models/ENJP_ctranslate2/')
     #Make a staging directory that can hold data as a medium
@@ -100,11 +115,6 @@ def load_models(option):
     sp_target_model = spm.SentencePieceProcessor(sp_target_model_path)
 
     return translator, sp_source_model, sp_target_model
-
-# Title for the page and nice icon
-st.set_page_config(page_title="NMT", page_icon="🤖")
-# Header
-st.title("jp-translate.io")
 
 build_directories()
 
