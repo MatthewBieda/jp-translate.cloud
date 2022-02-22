@@ -1,4 +1,5 @@
 import re
+from click import option
 import streamlit as st
 import sentencepiece as spm
 import ctranslate2
@@ -10,13 +11,44 @@ import neologdn
 import truecase
 
 # Title for the page and nice icon
-st.set_page_config(page_title="NMT", page_icon="🤖")
+st.set_page_config(page_title="jp-translate.io", page_icon="random")
 # Header
 st.title("jp-translate.io")
+print("page loaded")
 
 # Initialize tokenizers
 mt, md = MosesTokenizer(lang='en'), MosesDetokenizer(lang='en')
 tagger = fugashi.Tagger('-Owakati')
+print("tokenizers initalized")
+
+@st.cache(allow_output_mutation=True)
+def load_ENJP():
+        
+    ct_model_path = "ENJP_ctranslate2"
+    sp_source_model_path = "EN_Final.model"
+    sp_target_model_path = "JP_Final.model"
+
+    # Create objects of CTranslate2 Translator and SentencePieceProcessor to load the models
+    translator = ctranslate2.Translator(ct_model_path, "cpu")    # or "cuda" for GPU
+    sp_source_model = spm.SentencePieceProcessor(sp_source_model_path)
+    sp_target_model = spm.SentencePieceProcessor(sp_target_model_path)
+
+    return translator, sp_source_model, sp_target_model
+
+@st.cache(allow_output_mutation=True)
+def load_JPEN():
+
+    ct_model_path = "JPEN_ctranslate2"
+    sp_source_model_path = "JP_Final.model"
+    sp_target_model_path = "EN_Final.model"
+
+    # Create objects of CTranslate2 Translator and SentencePieceProcessor to load the models
+    translator = ctranslate2.Translator(ct_model_path, "cpu")    # or "cuda" for GPU
+    sp_source_model = spm.SentencePieceProcessor(sp_source_model_path)
+    sp_target_model = spm.SentencePieceProcessor(sp_target_model_path)
+
+    return translator, sp_source_model, sp_target_model
+
 
 def translate(source, translator, sp_source_model, sp_target_model):
     """Use CTranslate model to translate a sentence
@@ -31,6 +63,7 @@ def translate(source, translator, sp_source_model, sp_target_model):
     """
 
     if option == "English-to-Japanese":
+        print("translating English")
         source = source.lower()
         source_sentences = sent_tokenize(source)
         source_tokenized = sp_source_model.encode(source_sentences, out_type=str)
@@ -42,6 +75,7 @@ def translate(source, translator, sp_source_model, sp_target_model):
         return normalized
 
     if option == "Japanese-to-English":
+        print("translating Japanese")
         # use regex to split input sentences on fullstop (keeping it) into a list
         source = re.split(r'(?<=\。)', source)
         newlist = []
@@ -57,25 +91,6 @@ def translate(source, translator, sp_source_model, sp_target_model):
         truecased = truecase.get_true_case(mosesdetok)
         return truecased
 
-def load_models(option):
-
-    if option == "English-to-Japanese":
-        ct_model_path = "ENJP_ctranslate2"
-        sp_source_model_path = "EN_Final.model"
-        sp_target_model_path = "JP_Final.model"
-
-    elif option == "Japanese-to-English":
-        ct_model_path = "JPEN_ctranslate2"
-        sp_source_model_path = "JP_Final.model"
-        sp_target_model_path = "EN_Final.model"
-
-    # Create objects of CTranslate2 Translator and SentencePieceProcessor to load the models
-    translator = ctranslate2.Translator(ct_model_path, "cpu")    # or "cuda" for GPU
-    sp_source_model = spm.SentencePieceProcessor(sp_source_model_path)
-    sp_target_model = spm.SentencePieceProcessor(sp_target_model_path)
-
-    return translator, sp_source_model, sp_target_model
-
 
 # Form to add your items
 with st.form("my_form"):
@@ -84,13 +99,16 @@ with st.form("my_form"):
     option = st.selectbox(
     "Select Language Pair",
     ("English-to-Japanese", "Japanese-to-English"))
-    #st.write('You selected:', option)
+    print("language selected")
 
     # Textarea to type the source text.
     user_input = st.text_area("Source Text", max_chars=2000)
 
     # Load models
-    translator, sp_source_model, sp_target_model = load_models(option)
+    if option == "English-to-Japanese":
+        translator, sp_source_model, sp_target_model = load_ENJP()
+    elif option == "Japanese-to-English":
+        translator, sp_source_model, sp_target_model = load_JPEN()
     
     # Translate with CTranslate2 model
     translation = translate(user_input, translator, sp_source_model, sp_target_model)
