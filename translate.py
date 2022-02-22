@@ -8,61 +8,15 @@ mt = MosesTokenizer(lang='en')
 import fugashi
 import neologdn
 import truecase
-import s3fs
-import os
-import subprocess
 
 # Title for the page and nice icon
 st.set_page_config(page_title="NMT", page_icon="🤖")
 # Header
 st.title("jp-translate.io")
 
-@st.cache
-def download_Unidic():
-    cmd = "python -m unidic download"
-    returned_value = subprocess.run(cmd, shell=True) 
-    print(returned_value)
-
-download_Unidic()
-
-# Create AWS S3 connection object.
-fs = s3fs.S3FileSystem(anon=False)
-print("Connection established")
-
 # Initialize tokenizers
 mt, md = MosesTokenizer(lang='en'), MosesDetokenizer(lang='en')
 tagger = fugashi.Tagger('-Owakati')
-print("Tokenizers started")
-
-@st.cache
-def build_directories():
-    #First construct ENJP directory, then JPEN
-    files = fs.ls('ctranslate2models/ENJP_ctranslate2/')
-    #Make a staging directory that can hold data as a medium
-    if not os.path.exists("ENJP_ctranslate2"):
-        os.mkdir("ENJP_ctranslate2")
-
-    with st.spinner("Downloading models... this will only take a few seconds! \n Don't stop it!"):
-        for file in files:
-            item = str(file)
-            lst = item.split("/")
-            name = lst[2]
-            path = "ENJP_ctranslate2\\" + name
-            fs.download(file, path)
-
-    files = fs.ls('ctranslate2models/JPEN_ctranslate2/')
-    if not os.path.exists("JPEN_ctranslate2"):
-        os.mkdir("JPEN_ctranslate2")
-        
-    with st.spinner("Downloading models... this will only take a few seconds! \n Don't stop it!"):
-        for file in files:
-            item = str(file)
-            lst = item.split("/")
-            name = lst[2]
-            path = "JPEN_ctranslate2\\" + name
-            fs.download(file, path)
-
-    print("Models directories built and downloaded")
 
 def translate(source, translator, sp_source_model, sp_target_model):
     """Use CTranslate model to translate a sentence
@@ -88,8 +42,10 @@ def translate(source, translator, sp_source_model, sp_target_model):
         return normalized
 
     if option == "Japanese-to-English":
+        # use regex to split input sentences on fullstop (keeping it) into a list
         source = re.split(r'(?<=\。)', source)
         newlist = []
+        # optimal to use mecab to parse sentence by sentence
         for sentence in source:
             source_sentences = tagger.parse(sentence)
             newlist.append(source_sentences)
@@ -120,7 +76,6 @@ def load_models(option):
 
     return translator, sp_source_model, sp_target_model
 
-build_directories()
 
 # Form to add your items
 with st.form("my_form"):
@@ -151,6 +106,18 @@ with st.form("my_form"):
 st.markdown('Interested in how this was built? Read the research paper :book:') 
 
 with open('Research.pdf',"rb") as f:
-   st.download_button('Download', f, "Research.pdf")
+   st.download_button('Download paper', f, "Research.pdf")
 
 st.markdown('Interested in improving this project? [Contact me](https://matthewbieda.github.io/)') 
+
+# Optional Style (courtesy of ymoslem)
+st.markdown(""" <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .reportview-container .main .block-container{
+        padding-top: 0rem;
+        padding-right: 0rem;
+        padding-left: 0rem;
+        padding-bottom: 0rem;
+    } </style> """, unsafe_allow_html=True)
