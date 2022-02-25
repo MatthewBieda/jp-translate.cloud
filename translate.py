@@ -58,6 +58,7 @@ def translate(source, translator, sp_source_model, sp_target_model):
         for entry in splitsource:
             source_sentences = sent_tokenize(entry)
             source_tokenized = sp_source_model.encode(source_sentences, out_type=str)
+            translations = translator.translate_batch(source_tokenized)
             translations = [translation[0]["tokens"] for translation in translations]
             translations_detokenized = sp_target_model.decode(translations)
             translation = " ".join(translations_detokenized)
