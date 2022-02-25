@@ -4,7 +4,7 @@ import streamlit as st
 import sentencepiece as spm
 import ctranslate2
 from nltk import sent_tokenize
-from sacremoses import MosesTokenizer, MosesDetokenizer
+from sacremoses import MosesTokenizer, MosesDetokenizer, MosesPunctNormalizer
 mt = MosesTokenizer(lang='en')
 import fugashi
 import neologdn
@@ -17,6 +17,7 @@ st.title("jp-translate.io")
 
 # Initialize tokenizers
 mt, md = MosesTokenizer(lang='en'), MosesDetokenizer(lang='en')
+mpn = MosesPunctNormalizer()
 tagger = fugashi.Tagger('-Owakati')
 
 @st.cache(allow_output_mutation=True)
@@ -54,16 +55,22 @@ def translate(source, translator, sp_source_model, sp_target_model):
     if option == "English-to-Japanese":
         source = source.lower()
         newarray = []
-        splitsource = source.splitlines()
+        splitsource = re.split(r'(?<=[.!?])', source)
         for entry in splitsource:
-            source_sentences = sent_tokenize(entry)
-            source_tokenized = sp_source_model.encode(source_sentences, out_type=str)
+            print(entry)
+            source_sentences = mt.tokenize(entry, return_str=True)
+            sourceaslist = [source_sentences]
+            source_tokenized = sp_source_model.encode(sourceaslist, out_type=str)
+            print(source_tokenized)
             translations = translator.translate_batch(source_tokenized)
             translations = [translation[0]["tokens"] for translation in translations]
             translations_detokenized = sp_target_model.decode(translations)
             translation = " ".join(translations_detokenized)
             normalized = neologdn.normalize(translation)
-            newarray.append(normalized)
+            if '\n' in entry:
+                newarray.append('\n' + normalized)
+            else:
+                newarray.append(normalized)
         final = "\n".join(newarray)
         return final
 
